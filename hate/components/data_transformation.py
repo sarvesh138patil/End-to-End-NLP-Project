@@ -36,30 +36,64 @@ class DataTransformation:
 
     def raw_data_cleaning(self):
         
+        # try:
+        #     logging.info("Entered into the raw_data_cleaning function")
+        #     raw_data = pd.read_csv(self.data_ingestion_artifacts.raw_data_file_path)
+        #     raw_data.drop(self.data_transformation_config.DROP_COLUMNS,axis = self.data_transformation_config.AXIS,
+        #     inplace = self.data_transformation_config.INPLACE)
+
+        #     raw_data[raw_data[self.data_transformation_config.CLASS]==0][self.data_transformation_config.CLASS]=1
+            
+        #     # replace the value of 0 to 1
+        #     raw_data[self.data_transformation_config.CLASS].replace({0:1},inplace=True)
+
+        #     # Let's replace the value of 2 to 0.
+        #     raw_data[self.data_transformation_config.CLASS].replace({2:0}, inplace = True)
+
+        #     # Let's change the name of the 'class' to label
+        #     raw_data.rename(columns={self.data_transformation_config.CLASS:self.data_transformation_config.LABEL},inplace =True)
+        #     logging.info(f"Exited the raw_data_cleaning function and returned the raw_data {raw_data}")
+        #     return raw_data
+
+        # except Exception as e:
+        #     raise CustomException(e,sys) from e
+        
+        
         try:
             logging.info("Entered into the raw_data_cleaning function")
-            raw_data = pd.read_csv(self.data_ingestion_artifacts.raw_data_file_path)
-            raw_data.drop(self.data_transformation_config.DROP_COLUMNS,axis = self.data_transformation_config.AXIS,
-            inplace = self.data_transformation_config.INPLACE)
-
-            raw_data[raw_data[self.data_transformation_config.CLASS]==0][self.data_transformation_config.CLASS]=1
             
-            # replace the value of 0 to 1
-            raw_data[self.data_transformation_config.CLASS].replace({0:1},inplace=True)
-
-            # Let's replace the value of 2 to 0.
-            raw_data[self.data_transformation_config.CLASS].replace({2:0}, inplace = True)
-
-            # Let's change the name of the 'class' to label
-            raw_data.rename(columns={self.data_transformation_config.CLASS:self.data_transformation_config.LABEL},inplace =True)
+            # Read data and create a copy
+            raw_data = pd.read_csv(self.data_ingestion_artifacts.raw_data_file_path).copy()
+            
+            # Drop columns
+            raw_data.drop(
+                columns=self.data_transformation_config.DROP_COLUMNS, 
+                axis=self.data_transformation_config.AXIS,
+                inplace=True
+            )
+            
+            # Update class values using loc accessor
+            # First, update class 0 to 1
+            class_col = self.data_transformation_config.CLASS
+            raw_data.loc[raw_data[class_col] == 0, class_col] = 1
+            
+            # Update class 2 to 0
+            raw_data.loc[raw_data[class_col] == 2, class_col] = 0
+            
+            # Rename the class column to label
+            raw_data.rename(
+                columns={
+                    self.data_transformation_config.CLASS: self.data_transformation_config.LABEL
+                },
+                inplace=True
+            )
+            
             logging.info(f"Exited the raw_data_cleaning function and returned the raw_data {raw_data}")
             return raw_data
 
         except Exception as e:
-            raise CustomException(e,sys) from e
+            raise CustomException(e, sys) from e
         
-
-    
     def concat_dataframe(self):
 
         try:
@@ -84,12 +118,12 @@ class DataTransformation:
             stemmer = nltk.SnowballStemmer("english")
             stopword = set(stopwords.words('english'))
             words = str(words).lower()
-            words = re.sub('\[.*?\]', '', words)
-            words = re.sub('https?://\S+|www\.\S+', '', words)
+            words = re.sub(r'\[.*?\]', '', words)
+            words = re.sub(r'https?://\S+|www\.\S+', '', words)
             words = re.sub('<.*?>+', '', words)
             words = re.sub('[%s]' % re.escape(string.punctuation), '', words)
             words = re.sub('\n', '', words)
-            words = re.sub('\w*\d\w*', '', words)
+            words = re.sub(r'\w*\d\w*', '', words)
             words = [word for word in words.split(' ') if words not in stopword]
             words=" ".join(words)
             words = [stemmer.stem(word) for word in words.split(' ')]
